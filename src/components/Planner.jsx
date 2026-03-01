@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useCallback } from "react";
 
-const COLORS = ["#FF6B6B","#4ECDC4","#45B7D1","#96CEB4","#FFEAA7","#DDA0DD","#98D8C8","#F7DC6F","#BB8FCE","#F0B27A"];
+const COLORS = ["#FFB3B3","#B3E5D1","#B3D4F5","#C8E6C9","#FFF9C4","#E1BEE7","#B2EBF2","#FFF3B0","#D7B8F3","#FFD9B3"];
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const HOURS = Array.from({length:24},(_,i)=>i);
 const RECUR_OPTIONS = [
@@ -152,11 +152,6 @@ export default function App(){
   const [importResult,setImportResult]=useState(null);
   const [dragOverDrop,setDragOverDrop]=useState(false);
   const fileInputRef=useRef(null);
-
-  // Bulk edit state
-  const [showBulkEdit,setShowBulkEdit]=useState(false);
-  const [selectedIds,setSelectedIds]=useState(new Set());
-  const [bulkChanges,setBulkChanges]=useState({color:"",year:"",rate:""});
 
   // Bulk edit state
   const [showBulkEdit,setShowBulkEdit]=useState(false);
@@ -339,30 +334,6 @@ export default function App(){
       return {
         ...c,
         ...(bulkChanges.color?{color:bulkChanges.color}:{}),
-        ...(bulkChanges.year?{year:Number(bulkChanges.year)}:{}),
-        ...(bulkChanges.rate!==''?{rate:Number(bulkChanges.rate)}:{}),
-      };
-    }));
-    setShowBulkEdit(false);
-    setSelectedIds(new Set());
-    setSelectAll(false);
-    setBulkChanges({color:"",year:"",rate:""});
-  }
-
-  // ── Bulk Edit ──
-  function toggleSelect(id){
-    setSelectedIds(prev=>{const n=new Set(prev);n.has(id)?n.delete(id):n.add(id);return n;});
-  }
-  function toggleSelectAll(){
-    if(selectedIds.size===filteredClients.length){setSelectedIds(new Set());}
-    else{setSelectedIds(new Set(filteredClients.map(c=>c.id)));}
-  }
-  function applyBulkEdit(){
-    setClients(cs=>cs.map(c=>{
-      if(!selectedIds.has(c.id)) return c;
-      return {
-        ...c,
-        ...(bulkChanges.color?{color:bulkChanges.color}:{}),
         ...(bulkChanges.year!==''?{year:Number(bulkChanges.year)}:{}),
         ...(bulkChanges.rate!==''?{rate:Number(bulkChanges.rate)}:{}),
       };
@@ -382,21 +353,21 @@ export default function App(){
   }
 
   return(
-    <div style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",background:"#0f0f14",height:"100vh",color:"#e8e6f0",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",background:"#f7f7fc",height:"100vh",color:"#1a1a2e",display:"flex",flexDirection:"column",overflow:"hidden"}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@700;900&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{width:5px;height:5px}
-        ::-webkit-scrollbar-track{background:#1a1a24}
-        ::-webkit-scrollbar-thumb{background:#3a3a50;border-radius:3px}
+        ::-webkit-scrollbar-track{background:#f0f0f8}
+        ::-webkit-scrollbar-thumb{background:#c0c0d8;border-radius:3px}
         .btn{cursor:pointer;border:none;transition:all .15s;font-family:inherit}
         .btn:hover{filter:brightness(1.12)}
         .block-card:hover .del-btn{opacity:1!important}
-        input,select,textarea{font-family:inherit;background:#1e1e2e;border:1px solid #2e2e42;color:#e8e6f0;padding:8px 12px;border-radius:8px;width:100%;outline:none;font-size:14px}
+        input,select,textarea{font-family:inherit;background:#f8f8ff;border:1px solid #d8d8ee;color:#1a1a2e;padding:8px 12px;border-radius:8px;width:100%;outline:none;font-size:14px}
         input:focus,select:focus,textarea:focus{border-color:#7c6af7}
-        select option{background:#1e1e2e}
+        select option{background:#ffffff}
         .tab{cursor:pointer;padding:7px 18px;border-radius:8px;font-weight:500;font-size:13px;transition:all .15s;border:none;font-family:inherit}
-        .hour-row:hover{background:rgba(124,106,247,0.05)}
+        .hour-row:hover{background:rgba(124,106,247,0.04)}
         .recur-chip{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.05em;background:rgba(167,139,250,0.15);color:#a78bfa;border:1px solid rgba(167,139,250,0.2)}
         .year-btn{cursor:pointer;border:none;font-family:inherit;padding:4px 11px;border-radius:6px;font-size:12px;font-weight:600;transition:all .15s}
         .year-btn:hover{filter:brightness(1.15)}
@@ -404,9 +375,9 @@ export default function App(){
         .client-drag:active{cursor:grabbing}
         .client-drag:hover{transform:translateX(3px)}
         .ghost-block{position:fixed;pointer-events:none;z-index:9999;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;backdrop-filter:blur(4px);border:1.5px solid rgba(255,255,255,0.2);box-shadow:0 8px 32px rgba(0,0,0,0.5)}
-        .drop-zone{border:2px dashed #2e2e42;border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s}
+        .drop-zone{border:2px dashed #c8c8e8;border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s}
         .drop-zone:hover,.drop-zone.over{border-color:#7c6af7;background:rgba(124,106,247,0.06)}
-        .col-select{background:#1a1a26;border:1px solid #2e2e42;color:#e8e6f0;padding:6px 10px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;outline:none}
+        .col-select{background:#f8f8ff;border:1px solid #d8d8ee;color:#1a1a2e;padding:6px 10px;border-radius:7px;font-family:inherit;font-size:13px;cursor:pointer;outline:none}
         .col-select:focus{border-color:#7c6af7}
         .step-dot{width:8px;height:8px;border-radius:50%;transition:all .2s}
         .import-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -417,7 +388,7 @@ export default function App(){
 
       {/* Ghost */}
       {dragging && <>
-        <div className="ghost-block" style={{left:ghostPos.x+14,top:ghostPos.y-14,background:`${dragging.color}dd`,color:"#000",opacity:.92}}>
+        <div className="ghost-block" style={{left:ghostPos.x+14,top:ghostPos.y-14,background:`${dragging.color}dd`,color:"#fff",opacity:.95}}>
           ✦ {dragging.name}
         </div>
         <div style={{position:"fixed",inset:0,zIndex:9998,cursor:"grabbing"}}
@@ -426,7 +397,7 @@ export default function App(){
       </>}
 
       {/* Top Bar */}
-      <div style={{background:"#13131c",borderBottom:"1px solid #1e1e2e",padding:"0 20px",display:"flex",alignItems:"center",gap:14,height:56,flexShrink:0}}>
+      <div style={{background:"#ffffff",borderBottom:"1px solid #e0e0ee",padding:"0 20px",display:"flex",alignItems:"center",gap:14,height:56,flexShrink:0}}>
         <span style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:900,background:"linear-gradient(135deg,#a78bfa,#f472b6)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",letterSpacing:"-0.5px"}}>
           Chronos
         </span>
@@ -438,7 +409,7 @@ export default function App(){
           ))}
         </div>
         {view==="planner"&&(
-          <div style={{display:"flex",gap:2,background:"#1a1a26",borderRadius:8,padding:3,border:"1px solid #1e1e2e"}}>
+          <div style={{display:"flex",gap:2,background:"#f0f0f8",borderRadius:8,padding:3,border:"1px solid #e0e0ee"}}>
             {[["week","Week"],["workweek","Work Wk"],["month","Month"]].map(([pv,pl])=>(
               <button key={pv} className="btn" onClick={()=>setPlannerView(pv)}
                 style={{padding:"4px 10px",borderRadius:6,fontSize:11,fontWeight:600,
@@ -450,34 +421,34 @@ export default function App(){
           </div>
         )}
         {view==="planner"&&plannerView!=="month"&&(
-          <div style={{display:"flex",alignItems:"center",gap:4,background:"#1a1a26",borderRadius:8,padding:"3px 6px",border:"1px solid #1e1e2e"}}>
-            <button className="btn" onClick={()=>setWeekOffset(w=>w-1)} style={{background:"transparent",color:"#555",padding:"2px 7px",fontSize:14}}>‹</button>
+          <div style={{display:"flex",alignItems:"center",gap:4,background:"#f0f0f8",borderRadius:8,padding:"3px 6px",border:"1px solid #e0e0ee"}}>
+            <button className="btn" onClick={()=>setWeekOffset(w=>w-1)} style={{background:"transparent",color:"#777",padding:"2px 7px",fontSize:14}}>‹</button>
             <span style={{fontSize:11,fontWeight:600,color:"#888",minWidth:90,textAlign:"center"}}>{(()=>{const d=getWeekDates(weekOffset);return d[0].toLocaleDateString("en-US",{month:"short",day:"numeric"})+" – "+d[6].toLocaleDateString("en-US",{month:"short",day:"numeric"});})()}</span>
-            <button className="btn" onClick={()=>setWeekOffset(w=>w+1)} style={{background:"transparent",color:"#555",padding:"2px 7px",fontSize:14}}>›</button>
+            <button className="btn" onClick={()=>setWeekOffset(w=>w+1)} style={{background:"transparent",color:"#777",padding:"2px 7px",fontSize:14}}>›</button>
             {weekOffset!==0&&<button className="btn" onClick={()=>setWeekOffset(0)} style={{background:"transparent",color:"#7c6af7",fontSize:10,fontWeight:700,padding:"2px 6px"}}>Today</button>}
           </div>
         )}
         {view==="planner"&&plannerView==="month"&&(
-          <div style={{display:"flex",alignItems:"center",gap:4,background:"#1a1a26",borderRadius:8,padding:"3px 6px",border:"1px solid #1e1e2e"}}>
-            <button className="btn" onClick={()=>setMonthOffset(m=>m-1)} style={{background:"transparent",color:"#555",padding:"2px 7px",fontSize:14}}>‹</button>
+          <div style={{display:"flex",alignItems:"center",gap:4,background:"#f0f0f8",borderRadius:8,padding:"3px 6px",border:"1px solid #e0e0ee"}}>
+            <button className="btn" onClick={()=>setMonthOffset(m=>m-1)} style={{background:"transparent",color:"#777",padding:"2px 7px",fontSize:14}}>‹</button>
             <span style={{fontSize:11,fontWeight:600,color:"#888",minWidth:100,textAlign:"center"}}>{(()=>{const d=new Date();d.setMonth(d.getMonth()+monthOffset);return MONTH_NAMES[d.getMonth()]+" "+d.getFullYear();})()}</span>
-            <button className="btn" onClick={()=>setMonthOffset(m=>m+1)} style={{background:"transparent",color:"#555",padding:"2px 7px",fontSize:14}}>›</button>
+            <button className="btn" onClick={()=>setMonthOffset(m=>m+1)} style={{background:"transparent",color:"#777",padding:"2px 7px",fontSize:14}}>›</button>
             {monthOffset!==0&&<button className="btn" onClick={()=>setMonthOffset(0)} style={{background:"transparent",color:"#7c6af7",fontSize:10,fontWeight:700,padding:"2px 6px"}}>Today</button>}
           </div>
         )}
-        <div style={{display:"flex",alignItems:"center",gap:4,background:"#1a1a26",borderRadius:8,padding:"4px 6px",border:"1px solid #1e1e2e"}}>
-          <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y-1)} style={{background:"transparent",color:"#555",padding:"2px 7px"}}>‹</button>
+        <div style={{display:"flex",alignItems:"center",gap:4,background:"#f0f0f8",borderRadius:8,padding:"4px 6px",border:"1px solid #e0e0ee"}}>
+          <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y-1)} style={{background:"transparent",color:"#777",padding:"2px 7px"}}>‹</button>
           <span style={{fontSize:13,fontWeight:700,color:"#c4b5fd",minWidth:36,textAlign:"center"}}>{selectedYear}</span>
-          <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y+1)} style={{background:"transparent",color:"#555",padding:"2px 7px"}}>›</button>
+          <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y+1)} style={{background:"transparent",color:"#777",padding:"2px 7px"}}>›</button>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:10,alignItems:"center"}}>
-          <div style={{display:"flex",gap:12,padding:"5px 14px",background:"#1a1a26",borderRadius:10,fontSize:12,border:"1px solid #1e1e2e"}}>
-            <span><span style={{color:"#555"}}>Hrs/wk </span><strong style={{color:"#a78bfa"}}>{totalHours}h</strong></span>
+          <div style={{display:"flex",gap:12,padding:"5px 14px",background:"#f0f0f8",borderRadius:10,fontSize:12,border:"1px solid #e0e0ee"}}>
+            <span><span style={{color:"#777"}}>Hrs/wk </span><strong style={{color:"#a78bfa"}}>{totalHours}h</strong></span>
             <span style={{color:"#2a2a3a"}}>|</span>
-            <span><span style={{color:"#555"}}>Revenue </span><strong style={{color:"#4ade80"}}>${totalRevenue.toLocaleString()}</strong></span>
+            <span><span style={{color:"#777"}}>Revenue </span><strong style={{color:"#4ade80"}}>${totalRevenue.toLocaleString()}</strong></span>
           </div>
           <button className="btn" onClick={()=>{setShowImport(true);resetImport();}}
-            style={{background:"#1a1a26",color:"#a78bfa",padding:"7px 14px",borderRadius:8,fontWeight:600,fontSize:12,border:"1px solid #2e2e42"}}>
+            style={{background:"#f0f0f8",color:"#a78bfa",padding:"7px 14px",borderRadius:8,fontWeight:600,fontSize:12,border:"1px solid #d8d8ee"}}>
             ⬆ Import
           </button>
           <button className="btn" onClick={()=>{setShowBlockForm(true);setEditBlock(null);setNewBlock({...emptyBlock,clientId:filteredClients[0]?.id||clients[0]?.id||""});}}
@@ -491,12 +462,12 @@ export default function App(){
 
         {/* ── PLANNER ── */}
         {view==="planner"&&(<>
-          <div style={{width:150,flexShrink:0,background:"#0d0d12",borderRight:"1px solid #1a1a26",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-            <div style={{padding:"12px 12px 8px",fontSize:10,fontWeight:700,color:"#444",textTransform:"uppercase",letterSpacing:".08em",borderBottom:"1px solid #1a1a26"}}>
+          <div style={{width:150,flexShrink:0,background:"#f4f4fb",borderRight:"1px solid #1a1a26",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            <div style={{padding:"12px 12px 8px",fontSize:10,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:".08em",borderBottom:"1px solid #1a1a26"}}>
               Drag to Calendar
             </div>
             <div style={{flex:1,overflowY:"auto",padding:"8px"}}>
-              {filteredClients.length===0&&<div style={{fontSize:11,color:"#333",textAlign:"center",padding:"20px 8px",lineHeight:1.5}}>No clients for {selectedYear}</div>}
+              {filteredClients.length===0&&<div style={{fontSize:11,color:"#555",textAlign:"center",padding:"20px 8px",lineHeight:1.5}}>No clients for {selectedYear}</div>}
               {filteredClients.map(c=>(
                 <div key={c.id} className="client-drag" draggable
                   onDragStart={e=>handleDragStart(e,c)} onDragEnd={handleDragEnd}
@@ -505,12 +476,12 @@ export default function App(){
                   <div style={{width:8,height:8,borderRadius:"50%",background:c.color,flexShrink:0}}/>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:12,fontWeight:600,color:c.color,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.name}</div>
-                    <div style={{fontSize:10,color:"#444"}}>${c.rate}/h{c.estHours?` · ${c.estHours}h est`:""}</div>
+                    <div style={{fontSize:10,color:"#888"}}>${c.rate}/h{c.estHours?` · ${c.estHours}h est`:""}</div>
                   </div>
-                  <span style={{fontSize:14,color:"#333",flexShrink:0}}>⠿</span>
+                  <span style={{fontSize:14,color:"#555",flexShrink:0}}>⠿</span>
                 </div>
               ))}
-              {filteredClients.length>0&&<div style={{fontSize:10,color:"#333",textAlign:"center",padding:"8px 4px"}}>Drag onto any time slot</div>}
+              {filteredClients.length>0&&<div style={{fontSize:10,color:"#555",textAlign:"center",padding:"8px 4px"}}>Drag onto any time slot</div>}
             </div>
           </div>
           <div style={{flex:1,overflow:"auto",padding:"16px 20px"}}>
@@ -524,7 +495,7 @@ export default function App(){
                 <div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,marginBottom:2}}>
                     {DAYS.map(d=>(
-                      <div key={d} style={{textAlign:"center",fontSize:11,fontWeight:700,color:"#555",padding:"6px 0",background:"#13131c",borderRadius:6,letterSpacing:".06em"}}>{d}</div>
+                      <div key={d} style={{textAlign:"center",fontSize:11,fontWeight:700,color:"#777",padding:"6px 0",background:"#ffffff",borderRadius:6,letterSpacing:".06em"}}>{d}</div>
                     ))}
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2}}>
@@ -549,7 +520,7 @@ export default function App(){
                               </div>
                             );
                           })}
-                          {dayBlocks.length>3&&<div style={{fontSize:9,color:"#555",textAlign:"center"}}>+{dayBlocks.length-3} more</div>}
+                          {dayBlocks.length>3&&<div style={{fontSize:9,color:"#777",textAlign:"center"}}>+{dayBlocks.length-3} more</div>}
                         </div>
                       );
                     })}
@@ -566,7 +537,7 @@ export default function App(){
               const today=new Date();
               return(
               <div>
-            <div style={{display:"grid",gridTemplateColumns:`52px repeat(${visibleDays.length},1fr)`,gap:2,marginBottom:2,position:"sticky",top:0,zIndex:10,background:"#0f0f14",paddingBottom:4}}>
+            <div style={{display:"grid",gridTemplateColumns:`52px repeat(${visibleDays.length},1fr)`,gap:2,marginBottom:2,position:"sticky",top:0,zIndex:10,background:"#f7f7fc",paddingBottom:4}}>
               <div/>
               {visibleDays.map((date,i)=>{
                 const isToday=date.toDateString()===today.toDateString();
@@ -584,14 +555,14 @@ export default function App(){
               <div style={{display:"flex",flexDirection:"column"}}>
                 {HOURS.map(h=>(
                   <div key={h} style={{height:CELL_H,display:"flex",alignItems:"flex-start",justifyContent:"flex-end",paddingRight:7,paddingTop:3}}>
-                    <span style={{fontSize:10,color:"#383848",whiteSpace:"nowrap"}}>{fmt(h)}</span>
+                    <span style={{fontSize:10,color:"#aaaacc",whiteSpace:"nowrap"}}>{fmt(h)}</span>
                   </div>
                 ))}
               </div>
               {visibleDays.map((date,colIdx)=>{
                 const di=visibleDayIndices[colIdx];
                 return(
-                <div key={colIdx} style={{position:"relative",background:"#13131c",borderRadius:8,overflow:"hidden",
+                <div key={colIdx} style={{position:"relative",background:"#ffffff",borderRadius:8,overflow:"hidden",
                   outline:dragOver?.day===di?"2px dashed rgba(167,139,250,0.5)":"none",outlineOffset:"-2px",transition:"outline .1s"}}
                   onDragOver={e=>{if(!dragging)return;e.preventDefault();const r=e.currentTarget.getBoundingClientRect();setDragOver({day:di,hour:Math.max(0,Math.min(23,Math.floor((e.clientY-r.top)/CELL_H)))});}}
                   onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(null);}}
@@ -615,9 +586,9 @@ export default function App(){
                           borderTop:isRecur?`1px dashed ${c.color}44`:"none",borderRadius:6,padding:"4px 8px",cursor:"pointer",overflow:"hidden",zIndex:2}}
                         onClick={(e)=>{e.stopPropagation();openEditBlock(b);}}>
                         <div style={{fontSize:10,fontWeight:700,color:c.color,marginBottom:1,textTransform:"uppercase",letterSpacing:".04em"}}>{c.name}</div>
-                        <div style={{fontSize:12,color:"#ccc",lineHeight:1.3}}>{b.task}</div>
+                        <div style={{fontSize:12,color:"#888",lineHeight:1.3}}>{b.task}</div>
                         <div style={{display:"flex",alignItems:"center",gap:5,marginTop:3,flexWrap:"wrap"}}>
-                          <span style={{fontSize:10,color:"#555"}}>{fmt(b.start)}–{fmt(b.end)}</span>
+                          <span style={{fontSize:10,color:"#777"}}>{fmt(b.start)}–{fmt(b.end)}</span>
                           {isRecur&&<span className="recur-chip">🔁 {recurShort(b.recur)}</span>}
                         </div>
                         <button className="btn del-btn" onClick={(e)=>{e.stopPropagation();setBlocks(bs=>bs.filter(bl=>bl.id!==b.id));}}
@@ -640,17 +611,17 @@ export default function App(){
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>Clients</h2>
-                <span style={{fontSize:12,color:"#555",background:"#1a1a26",padding:"3px 10px",borderRadius:20,border:"1px solid #2a2a3a"}}>
+                <span style={{fontSize:12,color:"#777",background:"#f0f0f8",padding:"3px 10px",borderRadius:20,border:"1px solid #2a2a3a"}}>
                   {selectedYear} · {filteredClients.length} client{filteredClients.length!==1?"s":""}
                 </span>
               </div>
               <div style={{display:"flex",gap:8}}>
                 <button className="btn" onClick={()=>{setShowBulkEdit(true);setSelectedIds(new Set());setBulkChanges({color:"",year:"",rate:""}); }}
-                  style={{background:"#1a1a26",color:"#f472b6",padding:"7px 14px",borderRadius:8,fontWeight:600,fontSize:12,border:"1px solid #2e2e42"}}>
+                  style={{background:"#f0f0f8",color:"#f472b6",padding:"7px 14px",borderRadius:8,fontWeight:600,fontSize:12,border:"1px solid #d8d8ee"}}>
                   ✦ Bulk Edit
                 </button>
                 <button className="btn" onClick={()=>{setShowImport(true);resetImport();}}
-                  style={{background:"#1a1a26",color:"#a78bfa",padding:"7px 14px",borderRadius:8,fontWeight:600,fontSize:12,border:"1px solid #2e2e42"}}>
+                  style={{background:"#f0f0f8",color:"#a78bfa",padding:"7px 14px",borderRadius:8,fontWeight:600,fontSize:12,border:"1px solid #d8d8ee"}}>
                   ⬆ Import CSV
                 </button>
                 <button className="btn" onClick={()=>{setShowClientForm(true);setEditClient(null);setNewClient({...emptyClient,year:selectedYear});}}
@@ -673,7 +644,7 @@ export default function App(){
             </div>
             {/* Category filter */}
             <div style={{display:"flex",gap:8,marginBottom:18,alignItems:"center"}}>
-              <span style={{fontSize:11,color:"#555",fontWeight:600,textTransform:"uppercase",letterSpacing:".06em"}}>Filter:</span>
+              <span style={{fontSize:11,color:"#777",fontWeight:600,textTransform:"uppercase",letterSpacing:".06em"}}>Filter:</span>
               {["All",...CATEGORIES].map(cat=>{
                 const active=cat===(categoryFilter||"All");
                 const style=cat!=="All"?CATEGORY_STYLES[cat]:null;
@@ -691,10 +662,10 @@ export default function App(){
             </div>
 
             {filteredClients.length===0&&(
-              <div style={{textAlign:"center",color:"#333",padding:"48px 20px",background:"#13131c",borderRadius:12,border:"1px dashed #1e1e2e"}}>
+              <div style={{textAlign:"center",color:"#555",padding:"48px 20px",background:"#ffffff",borderRadius:12,border:"1px dashed #1e1e2e"}}>
                 <div style={{fontSize:28,marginBottom:10}}>📁</div>
-                <div style={{fontSize:14,fontWeight:600,color:"#555",marginBottom:4}}>No clients for {selectedYear}</div>
-                <div style={{fontSize:12,color:"#333"}}>Add manually or import a CSV.</div>
+                <div style={{fontSize:14,fontWeight:600,color:"#777",marginBottom:4}}>No clients for {selectedYear}</div>
+                <div style={{fontSize:12,color:"#555"}}>Add manually or import a CSV.</div>
               </div>
             )}
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
@@ -703,7 +674,7 @@ export default function App(){
                 const recurTasks=blocks.filter(b=>b.clientId===c.id&&b.recur&&b.recur!=="none");
                 return(
                   <div key={c.id} onClick={()=>showBulkEdit&&toggleSelect(c.id)}
-                    style={{background:"#13131c",borderRadius:12,padding:18,border:selectedIds.has(c.id)?`2px solid #f472b6`:`1px solid ${c.color}28`,position:"relative",overflow:"hidden",cursor:showBulkEdit?"pointer":"default",transition:"border .15s"}}>
+                    style={{background:"#ffffff",borderRadius:12,padding:18,border:selectedIds.has(c.id)?`2px solid #f472b6`:`1px solid ${c.color}28`,position:"relative",overflow:"hidden",cursor:showBulkEdit?"pointer":"default",transition:"border .15s"}}>
                     {showBulkEdit&&(
                       <div style={{position:"absolute",top:10,right:10,zIndex:5,width:18,height:18,borderRadius:5,
                         background:selectedIds.has(c.id)?"#f472b6":"#1e1e2e",border:selectedIds.has(c.id)?"none":"1px solid #3e3e52",
@@ -714,7 +685,7 @@ export default function App(){
                     <div style={{position:"absolute",top:0,right:0,width:70,height:70,background:`radial-gradient(circle at top right,${c.color}18,transparent)`,pointerEvents:"none"}}/>
                     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
                       <div style={{width:34,height:34,borderRadius:9,background:c.color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:15,color:"rgba(0,0,0,0.7)",flexShrink:0}}>{c.name[0]}</div>
-                      <div style={{flex:1}}><div style={{fontWeight:600,fontSize:15}}>{c.name}</div><div style={{fontSize:11,color:"#555"}}>{c.contact}</div></div>
+                      <div style={{flex:1}}><div style={{fontWeight:600,fontSize:15}}>{c.name}</div><div style={{fontSize:11,color:"#777"}}>{c.contact}</div></div>
                       <div style={{display:"flex",gap:4,flexShrink:0,alignItems:"center"}}>
                         {c.category&&(()=>{const s=CATEGORY_STYLES[c.category]||CATEGORY_STYLES["Other"];return(
                           <span style={{fontSize:10,color:s.color,background:s.bg,padding:"2px 8px",borderRadius:6,border:`1px solid ${s.border}`,fontWeight:700}}>{c.category}</span>
@@ -722,7 +693,7 @@ export default function App(){
                         <span style={{fontSize:11,color:"#a78bfa",background:"rgba(167,139,250,0.1)",padding:"2px 8px",borderRadius:6,border:"1px solid rgba(167,139,250,0.2)",fontWeight:600}}>{c.year}</span>
                       </div>
                     </div>
-                    <div style={{background:"#1a1a26",borderRadius:4,height:3,marginBottom:10,overflow:"hidden"}}>
+                    <div style={{background:"#f0f0f8",borderRadius:4,height:3,marginBottom:10,overflow:"hidden"}}>
                       <div style={{height:"100%",background:`linear-gradient(90deg,${c.color},${c.color}88)`,width:`${pct}%`,borderRadius:4}}/>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:12,textAlign:"center"}}>
@@ -730,8 +701,8 @@ export default function App(){
                         const isOver=l==="Sched"&&c.estHours&&hrs>Number(c.estHours);
                         const isUnder=l==="Sched"&&c.estHours&&hrs<Number(c.estHours);
                         return(
-                        <div key={l} style={{background:"#1a1a26",borderRadius:7,padding:"7px 4px",position:"relative"}}>
-                          <div style={{fontSize:10,color:"#444",marginBottom:1,textTransform:"uppercase",letterSpacing:".04em"}}>{l}</div>
+                        <div key={l} style={{background:"#f0f0f8",borderRadius:7,padding:"7px 4px",position:"relative"}}>
+                          <div style={{fontSize:10,color:"#888",marginBottom:1,textTransform:"uppercase",letterSpacing:".04em"}}>{l}</div>
                           <div style={{fontSize:13,fontWeight:700,color:isOver?"#f87171":isUnder?"#facc15":c.color}}>{v}</div>
                           {isOver&&<div style={{fontSize:8,color:"#f87171",marginTop:1}}>over</div>}
                           {isUnder&&<div style={{fontSize:8,color:"#facc15",marginTop:1}}>under</div>}
@@ -741,19 +712,19 @@ export default function App(){
                     </div>
                     {recurTasks.length>0&&(
                       <div style={{marginBottom:12}}>
-                        <div style={{fontSize:10,color:"#444",textTransform:"uppercase",letterSpacing:".05em",marginBottom:5,fontWeight:600}}>🔁 Recurring Tasks</div>
+                        <div style={{fontSize:10,color:"#888",textTransform:"uppercase",letterSpacing:".05em",marginBottom:5,fontWeight:600}}>🔁 Recurring Tasks</div>
                         {recurTasks.map(t=>(
-                          <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#1a1a26",borderRadius:6,padding:"5px 9px",marginBottom:3}}>
-                            <span style={{fontSize:12,color:"#bbb"}}>{t.task}</span>
+                          <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"#f0f0f8",borderRadius:6,padding:"5px 9px",marginBottom:3}}>
+                            <span style={{fontSize:12,color:"#777"}}>{t.task}</span>
                             <span className="recur-chip">{recurShort(t.recur)}</span>
                           </div>
                         ))}
                       </div>
                     )}
-                    {c.notes&&<div style={{fontSize:12,color:"#555",fontStyle:"italic",marginBottom:12,lineHeight:1.4}}>"{c.notes}"</div>}
+                    {c.notes&&<div style={{fontSize:12,color:"#777",fontStyle:"italic",marginBottom:12,lineHeight:1.4}}>"{c.notes}"</div>}
                     <div style={{display:"flex",gap:7}}>
-                      <button className="btn" onClick={()=>openEditClient(c)} style={{flex:1,background:"#1e1e30",color:"#a78bfa",padding:"6px 0",borderRadius:6,fontSize:12,fontWeight:500}}>Edit</button>
-                      <button className="btn" onClick={()=>deleteClient(c.id)} style={{flex:1,background:"#1e1616",color:"#f87171",padding:"6px 0",borderRadius:6,fontSize:12,fontWeight:500}}>Delete</button>
+                      <button className="btn" onClick={()=>openEditClient(c)} style={{flex:1,background:"#eeeef8",color:"#a78bfa",padding:"6px 0",borderRadius:6,fontSize:12,fontWeight:500}}>Edit</button>
+                      <button className="btn" onClick={()=>deleteClient(c.id)} style={{flex:1,background:"#fff0f0",color:"#f87171",padding:"6px 0",borderRadius:6,fontSize:12,fontWeight:500}}>Delete</button>
                     </div>
                   </div>
                 );
@@ -765,25 +736,25 @@ export default function App(){
 
       {/* ══ BULK EDIT MODAL ══ */}
       {showBulkEdit&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(8px)"}}
+        <div style={{position:"fixed",inset:0,background:"rgba(100,100,150,.3)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(8px)"}}
           onClick={()=>setShowBulkEdit(false)}>
-          <div style={{background:"#14141e",border:"1px solid #2a2a3c",borderRadius:18,padding:28,width:"100%",maxWidth:480,boxShadow:"0 32px 100px rgba(0,0,0,.7)"}}
+          <div style={{background:"#ffffff",border:"1px solid #d8d8ee",borderRadius:18,padding:28,width:"100%",maxWidth:480,boxShadow:"0 32px 100px rgba(0,0,0,.7)"}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
               <div>
                 <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,marginBottom:2}}>Bulk Edit Clients</h3>
-                <p style={{fontSize:12,color:"#555"}}>Select clients below then apply changes to all at once</p>
+                <p style={{fontSize:12,color:"#777"}}>Select clients below then apply changes to all at once</p>
               </div>
-              <button className="btn" onClick={()=>setShowBulkEdit(false)} style={{background:"#1e1e2e",color:"#666",width:28,height:28,borderRadius:7,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              <button className="btn" onClick={()=>setShowBulkEdit(false)} style={{background:"#e8e8f2",color:"#888",width:28,height:28,borderRadius:7,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>
 
             {/* Select all bar */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#1a1a26",borderRadius:9,padding:"10px 14px",marginBottom:20,marginTop:16}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"#f0f0f8",borderRadius:9,padding:"10px 14px",marginBottom:20,marginTop:16}}>
               <span style={{fontSize:13,color:"#888"}}>
                 <strong style={{color:"#f472b6"}}>{selectedIds.size}</strong> of {filteredClients.length} selected
               </span>
               <button className="btn" onClick={toggleSelectAll}
-                style={{background:"transparent",color:"#a78bfa",fontSize:12,fontWeight:600,padding:"4px 10px",borderRadius:6,border:"1px solid #2e2e42"}}>
+                style={{background:"transparent",color:"#a78bfa",fontSize:12,fontWeight:600,padding:"4px 10px",borderRadius:6,border:"1px solid #d8d8ee"}}>
                 {selectedIds.size===filteredClients.length?"Deselect All":"Select All"}
               </button>
             </div>
@@ -802,15 +773,15 @@ export default function App(){
                     {selectedIds.has(c.id)&&"✓"}
                   </div>
                   <div style={{width:10,height:10,borderRadius:"50%",background:c.color,flexShrink:0}}/>
-                  <span style={{fontSize:13,fontWeight:500,flex:1,color:"#ddd"}}>{c.name}</span>
-                  <span style={{fontSize:11,color:"#555"}}>${c.rate}/h · {c.year}</span>
+                  <span style={{fontSize:13,fontWeight:500,flex:1,color:"#555"}}>{c.name}</span>
+                  <span style={{fontSize:11,color:"#777"}}>${c.rate}/h · {c.year}</span>
                 </div>
               ))}
             </div>
 
             {/* Changes to apply */}
-            <div style={{background:"#1a1a26",borderRadius:10,padding:16,marginBottom:20}}>
-              <div style={{fontSize:11,fontWeight:700,color:"#555",textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Apply Changes To Selected</div>
+            <div style={{background:"#f0f0f8",borderRadius:10,padding:16,marginBottom:20}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#777",textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}}>Apply Changes To Selected</div>
 
               <div style={{marginBottom:12}}>
                 <label style={lbl}>New Color</label>
@@ -821,7 +792,7 @@ export default function App(){
                         border:bulkChanges.color===col?"3px solid #fff":"3px solid transparent",transition:"border .1s"}}/>
                   ))}
                   {bulkChanges.color&&<button className="btn" onClick={()=>setBulkChanges(b=>({...b,color:""}))}
-                    style={{fontSize:11,color:"#555",background:"transparent",padding:"0 6px"}}>✕ clear</button>}
+                    style={{fontSize:11,color:"#777",background:"transparent",padding:"0 6px"}}>✕ clear</button>}
                 </div>
               </div>
 
@@ -829,7 +800,7 @@ export default function App(){
                 <div>
                   <label style={lbl}>Move to Year</label>
                   <select value={bulkChanges.year} onChange={e=>setBulkChanges(b=>({...b,year:e.target.value}))}
-                    style={{background:"#13131c",border:"1px solid #2e2e42",color:"#e8e6f0",padding:"8px 12px",borderRadius:8,width:"100%",fontFamily:"inherit",fontSize:13}}>
+                    style={{background:"#ffffff",border:"1px solid #d8d8ee",color:"#1a1a2e",padding:"8px 12px",borderRadius:8,width:"100%",fontFamily:"inherit",fontSize:13}}>
                     <option value="">— no change —</option>
                     {YEARS.map(y=><option key={y} value={y}>{y}</option>)}
                   </select>
@@ -838,14 +809,14 @@ export default function App(){
                   <label style={lbl}>New Hourly Rate ($)</label>
                   <input type="number" placeholder="no change" value={bulkChanges.rate}
                     onChange={e=>setBulkChanges(b=>({...b,rate:e.target.value}))}
-                    style={{background:"#13131c",border:"1px solid #2e2e42",color:"#e8e6f0",padding:"8px 12px",borderRadius:8,width:"100%",fontFamily:"inherit",fontSize:13}}/>
+                    style={{background:"#ffffff",border:"1px solid #d8d8ee",color:"#1a1a2e",padding:"8px 12px",borderRadius:8,width:"100%",fontFamily:"inherit",fontSize:13}}/>
                 </div>
               </div>
             </div>
 
             <div style={{display:"flex",gap:8}}>
               <button className="btn" onClick={()=>setShowBulkEdit(false)}
-                style={{flex:1,background:"#1a1a26",color:"#666",padding:"11px 0",borderRadius:9,fontWeight:600,border:"1px solid #2e2e42"}}>
+                style={{flex:1,background:"#f0f0f8",color:"#888",padding:"11px 0",borderRadius:9,fontWeight:600,border:"1px solid #d8d8ee"}}>
                 Cancel
               </button>
               <button className="btn" onClick={applyBulkEdit} disabled={selectedIds.size===0}
@@ -860,18 +831,18 @@ export default function App(){
 
       {/* ══ CSV IMPORT MODAL ══ */}
       {showImport&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.8)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(8px)"}}
+        <div style={{position:"fixed",inset:0,background:"rgba(100,100,150,.3)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(8px)"}}
           onClick={closeImport}>
-          <div style={{background:"#14141e",border:"1px solid #2a2a3c",borderRadius:18,padding:28,width:"100%",maxWidth:560,maxHeight:"88vh",overflow:"auto",boxShadow:"0 32px 100px rgba(0,0,0,.7)"}}
+          <div style={{background:"#ffffff",border:"1px solid #d8d8ee",borderRadius:18,padding:28,width:"100%",maxWidth:560,maxHeight:"88vh",overflow:"auto",boxShadow:"0 32px 100px rgba(0,0,0,.7)"}}
             onClick={e=>e.stopPropagation()}>
 
             {/* Header */}
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
               <div>
                 <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:19,fontWeight:700,marginBottom:2}}>Import Clients</h3>
-                <p style={{fontSize:12,color:"#555"}}>Upload a CSV file to bulk-add clients</p>
+                <p style={{fontSize:12,color:"#777"}}>Upload a CSV file to bulk-add clients</p>
               </div>
-              <button className="btn" onClick={closeImport} style={{background:"#1e1e2e",color:"#666",width:28,height:28,borderRadius:7,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+              <button className="btn" onClick={closeImport} style={{background:"#e8e8f2",color:"#888",width:28,height:28,borderRadius:7,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
             </div>
 
             {/* Step indicators */}
@@ -905,14 +876,14 @@ export default function App(){
                   <input ref={fileInputRef} type="file" accept=".csv,text/csv" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
                   <div style={{fontSize:32,marginBottom:10}}>📂</div>
                   <div style={{fontWeight:600,fontSize:15,marginBottom:4}}>Drop your CSV here</div>
-                  <div style={{fontSize:12,color:"#555",marginBottom:16}}>or click to browse files</div>
-                  <div style={{fontSize:11,color:"#444",background:"#1a1a26",borderRadius:8,padding:"8px 14px",display:"inline-block"}}>
+                  <div style={{fontSize:12,color:"#777",marginBottom:16}}>or click to browse files</div>
+                  <div style={{fontSize:11,color:"#888",background:"#f0f0f8",borderRadius:8,padding:"8px 14px",display:"inline-block"}}>
                     Accepts: name, email, rate, notes — any column order
                   </div>
                 </div>
                 <div style={{marginTop:16,display:"flex",justifyContent:"center"}}>
                   <button className="btn" onClick={downloadSample}
-                    style={{background:"transparent",color:"#555",fontSize:12,padding:"6px 14px",borderRadius:6,border:"1px solid #2e2e42"}}>
+                    style={{background:"transparent",color:"#777",fontSize:12,padding:"6px 14px",borderRadius:6,border:"1px solid #d8d8ee"}}>
                     ⬇ Download sample CSV
                   </button>
                 </div>
@@ -923,7 +894,7 @@ export default function App(){
             {importStep==="map"&&importRaw&&(
               <div>
                 <p style={{fontSize:13,color:"#888",marginBottom:16}}>
-                  Found <strong style={{color:"#c4b5fd"}}>{importRaw.rows.length} rows</strong> with columns: <em style={{color:"#666"}}>{importRaw.headers.join(", ")}</em>
+                  Found <strong style={{color:"#c4b5fd"}}>{importRaw.rows.length} rows</strong> with columns: <em style={{color:"#888"}}>{importRaw.headers.join(", ")}</em>
                 </p>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:20}}>
                   {[
@@ -975,7 +946,7 @@ export default function App(){
 
                 <div style={{display:"flex",gap:8}}>
                   <button className="btn" onClick={()=>setImportStep("upload")}
-                    style={{flex:1,background:"#1a1a26",color:"#666",padding:"10px 0",borderRadius:8,fontWeight:600,border:"1px solid #2e2e42"}}>
+                    style={{flex:1,background:"#f0f0f8",color:"#888",padding:"10px 0",borderRadius:8,fontWeight:600,border:"1px solid #d8d8ee"}}>
                     ← Back
                   </button>
                   <button className="btn" onClick={buildPreview} disabled={!importMapping.name}
@@ -992,7 +963,7 @@ export default function App(){
                 <p style={{fontSize:13,color:"#888",marginBottom:14}}>
                   Showing first <strong style={{color:"#c4b5fd"}}>{importPreview.length}</strong> of <strong style={{color:"#c4b5fd"}}>{importRaw.rows.length}</strong> clients to be imported into <strong style={{color:"#c4b5fd"}}>{importYear}</strong>:
                 </p>
-                <div style={{background:"#1a1a26",borderRadius:10,overflow:"hidden",marginBottom:20}}>
+                <div style={{background:"#f0f0f8",borderRadius:10,overflow:"hidden",marginBottom:20}}>
                   <table className="import-table">
                     <thead>
                       <tr>
@@ -1003,19 +974,19 @@ export default function App(){
                       {importPreview.map((c,i)=>(
                         <tr key={i}>
                           <td><div style={{width:14,height:14,borderRadius:"50%",background:c.color}}/></td>
-                          <td style={{fontWeight:600,color:"#e8e6f0"}}>{c.name}</td>
-                          <td style={{color:"#666"}}>{c.contact||"—"}</td>
+                          <td style={{fontWeight:600,color:"#1a1a2e"}}>{c.name}</td>
+                          <td style={{color:"#888"}}>{c.contact||"—"}</td>
                           <td style={{color:"#4ade80"}}>{c.rate?`$${c.rate}/h`:"—"}</td>
-                          <td style={{color:"#666"}}>{c.notes||"—"}</td>
+                          <td style={{color:"#888"}}>{c.notes||"—"}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                {importRaw.rows.length>10&&<p style={{fontSize:11,color:"#444",marginBottom:16,textAlign:"center"}}>+ {importRaw.rows.length-10} more rows not shown</p>}
+                {importRaw.rows.length>10&&<p style={{fontSize:11,color:"#888",marginBottom:16,textAlign:"center"}}>+ {importRaw.rows.length-10} more rows not shown</p>}
                 <div style={{display:"flex",gap:8}}>
                   <button className="btn" onClick={()=>setImportStep("map")}
-                    style={{flex:1,background:"#1a1a26",color:"#666",padding:"10px 0",borderRadius:8,fontWeight:600,border:"1px solid #2e2e42"}}>← Back</button>
+                    style={{flex:1,background:"#f0f0f8",color:"#888",padding:"10px 0",borderRadius:8,fontWeight:600,border:"1px solid #d8d8ee"}}>← Back</button>
                   <button className="btn" onClick={confirmImport}
                     style={{flex:2,background:"linear-gradient(135deg,#7c6af7,#a78bfa)",color:"#fff",padding:"10px 0",borderRadius:8,fontWeight:600}}>
                     ✓ Import {importRaw.rows.length} Clients
@@ -1031,18 +1002,18 @@ export default function App(){
                 <h4 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,marginBottom:8}}>Import Complete</h4>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,margin:"20px 0"}}>
                   {[["Added",importResult.added,"#4ade80"],["Replaced",importResult.replaced,"#a78bfa"],["Skipped",importResult.skipped,"#666"]].map(([l,v,col])=>(
-                    <div key={l} style={{background:"#1a1a26",borderRadius:10,padding:"14px 8px"}}>
+                    <div key={l} style={{background:"#f0f0f8",borderRadius:10,padding:"14px 8px"}}>
                       <div style={{fontSize:24,fontWeight:800,color:col,marginBottom:4}}>{v}</div>
-                      <div style={{fontSize:11,color:"#555",textTransform:"uppercase",letterSpacing:".05em"}}>{l}</div>
+                      <div style={{fontSize:11,color:"#777",textTransform:"uppercase",letterSpacing:".05em"}}>{l}</div>
                     </div>
                   ))}
                 </div>
-                <p style={{fontSize:13,color:"#666",marginBottom:20}}>
+                <p style={{fontSize:13,color:"#888",marginBottom:20}}>
                   {importResult.added} new client{importResult.added!==1?"s":""} added to <strong style={{color:"#c4b5fd"}}>{importYear}</strong>
                 </p>
                 <div style={{display:"flex",gap:8}}>
                   <button className="btn" onClick={resetImport}
-                    style={{flex:1,background:"#1a1a26",color:"#a78bfa",padding:"10px 0",borderRadius:8,fontWeight:600,border:"1px solid #2e2e42"}}>
+                    style={{flex:1,background:"#f0f0f8",color:"#a78bfa",padding:"10px 0",borderRadius:8,fontWeight:600,border:"1px solid #d8d8ee"}}>
                     Import Another
                   </button>
                   <button className="btn" onClick={()=>{closeImport();setSelectedYear(importYear);setView("clients");}}
@@ -1094,7 +1065,7 @@ export default function App(){
           </div>
           <div style={{display:"flex",gap:8}}>
             {editBlock&&<button className="btn" onClick={()=>{setBlocks(bs=>bs.filter(b=>b.id!==editBlock));setShowBlockForm(false);setEditBlock(null);}}
-              style={{flex:1,background:"#2a1a1a",color:"#f87171",padding:"10px 0",borderRadius:8,fontWeight:600}}>Delete</button>}
+              style={{flex:1,background:"#fff0f0",color:"#f87171",padding:"10px 0",borderRadius:8,fontWeight:600}}>Delete</button>}
             <button className="btn" onClick={saveBlock}
               style={{flex:2,background:"linear-gradient(135deg,#7c6af7,#a78bfa)",color:"#fff",padding:"10px 0",borderRadius:8,fontWeight:600}}>
               {editBlock?"Save Changes":"Add Block"}
@@ -1142,7 +1113,7 @@ export default function App(){
                 <button key={cat} className="btn" onClick={()=>setNewClient({...newClient,category:cat})}
                   style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:600,
                     background:active?s.bg:"#1a1a26",
-                    color:active?s.color:"#666",
+                    color:active?s.color:"#888",
                     border:active?`1px solid ${s.border}`:"1px solid #1e1e2e",
                     transition:"all .12s"}}>
                   {cat}
@@ -1160,17 +1131,17 @@ export default function App(){
   );
 }
 
-const lbl={display:"block",fontSize:11,color:"#555",marginBottom:4,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em"};
+const lbl={display:"block",fontSize:11,color:"#777",marginBottom:4,fontWeight:600,textTransform:"uppercase",letterSpacing:".06em"};
 
 function Modal({title,children,onClose}){
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)"}}
+    <div style={{position:"fixed",inset:0,background:"rgba(100,100,150,.3)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(6px)"}}
       onClick={onClose}>
-      <div style={{background:"#16161e",border:"1px solid #2a2a3c",borderRadius:16,padding:22,width:"100%",maxWidth:420,maxHeight:"90vh",overflow:"auto",boxShadow:"0 24px 80px rgba(0,0,0,.6)"}}
+      <div style={{background:"#ffffff",border:"1px solid #d8d8ee",borderRadius:16,padding:22,width:"100%",maxWidth:420,maxHeight:"90vh",overflow:"auto",boxShadow:"0 24px 80px rgba(0,0,0,.6)"}}
         onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
           <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:17,fontWeight:700}}>{title}</h3>
-          <button className="btn" onClick={onClose} style={{background:"#1e1e2e",color:"#666",width:26,height:26,borderRadius:6,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
+          <button className="btn" onClick={onClose} style={{background:"#e8e8f2",color:"#888",width:26,height:26,borderRadius:6,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
         {children}
       </div>
