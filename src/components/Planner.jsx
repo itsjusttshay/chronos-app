@@ -156,7 +156,7 @@ export default function App(){
   // Bulk edit state
   const [showBulkEdit,setShowBulkEdit]=useState(false);
   const [selectedIds,setSelectedIds]=useState(new Set());
-  const [bulkChanges,setBulkChanges]=useState({color:"",year:"",rate:""});
+  const [bulkChanges,setBulkChanges]=useState({color:"",year:"",rate:"",category:""});
   const [selectAll,setSelectAll]=useState(false);
 
   // Drag state (calendar)
@@ -336,11 +336,12 @@ export default function App(){
         ...(bulkChanges.color?{color:bulkChanges.color}:{}),
         ...(bulkChanges.year!==''?{year:Number(bulkChanges.year)}:{}),
         ...(bulkChanges.rate!==''?{rate:Number(bulkChanges.rate)}:{}),
+        ...(bulkChanges.category?{category:bulkChanges.category}:{}),
       };
     }));
     setShowBulkEdit(false);
     setSelectedIds(new Set());
-    setBulkChanges({color:"",year:"",rate:""});
+    setBulkChanges({color:"",year:"",rate:"",category:""});
   }
 
   // ── Download sample CSV ──
@@ -796,7 +797,7 @@ export default function App(){
                 </div>
               </div>
 
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
                 <div>
                   <label style={lbl}>Move to Year</label>
                   <select value={bulkChanges.year} onChange={e=>setBulkChanges(b=>({...b,year:e.target.value}))}
@@ -810,6 +811,32 @@ export default function App(){
                   <input type="number" placeholder="no change" value={bulkChanges.rate}
                     onChange={e=>setBulkChanges(b=>({...b,rate:e.target.value}))}
                     style={{background:"#ffffff",border:"1px solid #d8d8ee",color:"#1a1a2e",padding:"8px 12px",borderRadius:8,width:"100%",fontFamily:"inherit",fontSize:13}}/>
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Set Category</label>
+                <div style={{display:"flex",gap:8}}>
+                  <button className="btn" onClick={()=>setBulkChanges(b=>({...b,category:""}))}
+                    style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:11,fontWeight:600,
+                      background:bulkChanges.category===""?"#e8e8f2":"#f0f0f8",
+                      color:bulkChanges.category===""?"#666":"#aaa",
+                      border:bulkChanges.category===""?"1px solid #c0c0d8":"1px solid #e8e8f2"}}>
+                    No change
+                  </button>
+                  {CATEGORIES.map(cat=>{
+                    const s=CATEGORY_STYLES[cat];
+                    const active=bulkChanges.category===cat;
+                    return(
+                      <button key={cat} className="btn" onClick={()=>setBulkChanges(b=>({...b,category:cat}))}
+                        style={{flex:1,padding:"8px 0",borderRadius:8,fontSize:12,fontWeight:600,
+                          background:active?s.bg:"#f0f0f8",
+                          color:active?s.color:"#aaa",
+                          border:active?"1px solid "+s.border:"1px solid #e8e8f2",
+                          transition:"all .12s"}}>
+                        {cat}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
