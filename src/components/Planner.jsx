@@ -165,9 +165,6 @@ export default function App(){
   const [newNoteText,setNewNoteText]=useState({});
   const [expandedNotes,setExpandedNotes]=useState(new Set());
   const noteNextId=useRef(5000);
-  const [clientNotes,setClientNotes]=useState({}); // {clientId: [{id, text, date, year}]}
-  const [newNoteText,setNewNoteText]=useState({}); // {clientId: string}
-  const [expandedNotes,setExpandedNotes]=useState(new Set()); // set of clientIds with notes open
   const [dragging,setDragging]=useState(null);
   const [dragOver,setDragOver]=useState(null);
   const [ghostPos,setGhostPos]=useState({x:0,y:0});
@@ -376,25 +373,6 @@ export default function App(){
   }
 
   // ── Client Notes ──
-  function toggleNotes(clientId){
-    setExpandedNotes(prev=>{const n=new Set(prev);n.has(clientId)?n.delete(clientId):n.add(clientId);return n;});
-  }
-  function addNote(clientId){
-    const text=(newNoteText[clientId]||"").trim();
-    if(!text) return;
-    const now=new Date();
-    const dateStr=now.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
-    const note={id:noteNextId.current++,text,date:dateStr,year:selectedYear,clientId};
-    setClientNotes(prev=>({...prev,[clientId]:[note,...(prev[clientId]||[])]}));
-    setNewNoteText(prev=>({...prev,[clientId]:""}));
-  }
-  function deleteNote(clientId,noteId){
-    setClientNotes(prev=>({...prev,[clientId]:(prev[clientId]||[]).filter(n=>n.id!==noteId)}));
-  }
-  function getClientNotes(clientId){
-    return(clientNotes[clientId]||[]).filter(n=>n.year===selectedYear);
-  }
-
   // ── Download sample CSV ──
   function downloadSample() {
     const csv = `name,email,rate,notes\nJohn Smith,john@example.com,125,Website project\nSarah Lee,sarah@co.com,175,Marketing campaign\nTech Solutions,admin@tech.com,200,App development`;
