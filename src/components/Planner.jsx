@@ -491,7 +491,7 @@ export default function App(){
         )}
         <div style={{display:"flex",alignItems:"center",gap:4,background:"#f0f0f8",borderRadius:8,padding:"4px 6px",border:"1px solid #e0e0ee"}}>
           <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y-1)} style={{background:"transparent",color:"#777",padding:"2px 7px"}}>‹</button>
-          <span style={{fontSize:13,fontWeight:700,color:"#c4b5fd",minWidth:36,textAlign:"center"}}>{selectedYear}</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#7c6af7",minWidth:36,textAlign:"center"}}>{selectedYear}</span>
           <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y+1)} style={{background:"transparent",color:"#777",padding:"2px 7px"}}>›</button>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:10,alignItems:"center"}}>
@@ -689,7 +689,7 @@ export default function App(){
                 const active=y===selectedYear;
                 return(
                   <button key={y} className="year-btn btn" onClick={()=>setSelectedYear(y)}
-                    style={{background:active?"linear-gradient(135deg,#7c6af733,#a78bfa22)":"#13131c",color:active?"#c4b5fd":"#444",border:active?"1px solid #7c6af755":"1px solid #1e1e2e",whiteSpace:"nowrap",padding:"5px 14px"}}>
+                    style={{background:active?"#7c6af7":"#ffffff",color:active?"#ffffff":"#888",border:active?"1px solid #7c6af755":"1px solid #1e1e2e",whiteSpace:"nowrap",padding:"5px 14px"}}>
                     {y}{count>0&&<span style={{marginLeft:5,background:active?"#7c6af755":"#1e1e2e",borderRadius:10,padding:"1px 6px",fontSize:10,color:active?"#c4b5fd":"#555"}}>{count}</span>}
                   </button>
                 );
@@ -1218,8 +1218,8 @@ export default function App(){
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
             {YEARS.map(y=>(
               <button key={y} className="btn year-btn" onClick={()=>setNewClient({...newClient,year:y})}
-                style={{background:newClient.year===y?"linear-gradient(135deg,#7c6af733,#a78bfa22)":"#1a1a26",
-                  color:newClient.year===y?"#c4b5fd":"#555",border:newClient.year===y?"1px solid #7c6af766":"1px solid #1e1e2e",fontWeight:newClient.year===y?700:400}}>
+                style={{background:newClient.year===y?"#7c6af7":"#ffffff",
+                  color:newClient.year===y?"#ffffff":"#888",border:newClient.year===y?"1px solid #7c6af766":"1px solid #1e1e2e",fontWeight:newClient.year===y?700:400}}>
                 {y}
               </button>
             ))}
