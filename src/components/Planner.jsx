@@ -168,7 +168,6 @@ export default function App(){
   const [clientNotes,setClientNotes]=useState({}); // {clientId: [{id, text, date, year}]}
   const [newNoteText,setNewNoteText]=useState({}); // {clientId: string}
   const [expandedNotes,setExpandedNotes]=useState(new Set()); // set of clientIds with notes open
-  const noteNextId=useRef(5000);
   const [dragging,setDragging]=useState(null);
   const [dragOver,setDragOver]=useState(null);
   const [ghostPos,setGhostPos]=useState({x:0,y:0});
