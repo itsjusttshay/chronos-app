@@ -161,6 +161,14 @@ export default function App(){
 
   // Drag state (calendar)
   const [categoryFilter,setCategoryFilter]=useState("");
+  const [clientNotes,setClientNotes]=useState({});
+  const [newNoteText,setNewNoteText]=useState({});
+  const [expandedNotes,setExpandedNotes]=useState(new Set());
+  const noteNextId=useRef(5000);
+  const [clientNotes,setClientNotes]=useState({}); // {clientId: [{id, text, date, year}]}
+  const [newNoteText,setNewNoteText]=useState({}); // {clientId: string}
+  const [expandedNotes,setExpandedNotes]=useState(new Set()); // set of clientIds with notes open
+  const noteNextId=useRef(5000);
   const [dragging,setDragging]=useState(null);
   const [dragOver,setDragOver]=useState(null);
   const [ghostPos,setGhostPos]=useState({x:0,y:0});
@@ -342,6 +350,50 @@ export default function App(){
     setShowBulkEdit(false);
     setSelectedIds(new Set());
     setBulkChanges({color:"",year:"",rate:"",category:""});
+  }
+
+  // ── Client Notes ──
+  function toggleNotes(clientId){
+    setExpandedNotes(prev=>{
+      const next=new Set(prev);
+      next.has(clientId)?next.delete(clientId):next.add(clientId);
+      return next;
+    });
+  }
+  function addNote(clientId){
+    const text=(newNoteText[clientId]||"").trim();
+    if(!text) return;
+    const now=new Date();
+    const dateStr=now.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    const note={id:noteNextId.current++,text,date:dateStr,year:selectedYear,clientId};
+    setClientNotes(prev=>({...prev,[clientId]:[note,...(prev[clientId]||[])]}));
+    setNewNoteText(prev=>({...prev,[clientId]:""}));
+  }
+  function deleteNote(clientId,noteId){
+    setClientNotes(prev=>({...prev,[clientId]:(prev[clientId]||[]).filter(n=>n.id!==noteId)}));
+  }
+  function getClientNotes(clientId){
+    return (clientNotes[clientId]||[]).filter(n=>n.year===selectedYear);
+  }
+
+  // ── Client Notes ──
+  function toggleNotes(clientId){
+    setExpandedNotes(prev=>{const n=new Set(prev);n.has(clientId)?n.delete(clientId):n.add(clientId);return n;});
+  }
+  function addNote(clientId){
+    const text=(newNoteText[clientId]||"").trim();
+    if(!text) return;
+    const now=new Date();
+    const dateStr=now.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    const note={id:noteNextId.current++,text,date:dateStr,year:selectedYear,clientId};
+    setClientNotes(prev=>({...prev,[clientId]:[note,...(prev[clientId]||[])]}));
+    setNewNoteText(prev=>({...prev,[clientId]:""}));
+  }
+  function deleteNote(clientId,noteId){
+    setClientNotes(prev=>({...prev,[clientId]:(prev[clientId]||[]).filter(n=>n.id!==noteId)}));
+  }
+  function getClientNotes(clientId){
+    return(clientNotes[clientId]||[]).filter(n=>n.year===selectedYear);
   }
 
   // ── Download sample CSV ──
@@ -722,7 +774,57 @@ export default function App(){
                         ))}
                       </div>
                     )}
-                    {c.notes&&<div style={{fontSize:12,color:"#777",fontStyle:"italic",marginBottom:12,lineHeight:1.4}}>"{c.notes}"</div>}
+                    {c.notes&&<div style={{fontSize:12,color:"#777",fontStyle:"italic",marginBottom:10,lineHeight:1.4}}>"{c.notes}"</div>}
+
+                    {/* Running Notes */}
+                    <div style={{marginBottom:10}}>
+                      <button className="btn" onClick={()=>toggleNotes(c.id)}
+                        style={{width:"100%",background:"#f4f4fb",border:"1px solid #e0e0ee",borderRadius:8,
+                          padding:"7px 12px",fontSize:12,fontWeight:600,color:"#7c6af7",
+                          display:"flex",alignItems:"center",justifyContent:"space-between",
+                          marginBottom:expandedNotes.has(c.id)?8:0}}>
+                        <span>
+                          📝 Notes {selectedYear}
+                          {getClientNotes(c.id).length>0&&(
+                            <span style={{marginLeft:6,background:"#7c6af7",color:"#fff",borderRadius:10,padding:"1px 7px",fontSize:10}}>
+                              {getClientNotes(c.id).length}
+                            </span>
+                          )}
+                        </span>
+                        <span style={{fontSize:10,color:"#aaa"}}>{expandedNotes.has(c.id)?"▲":"▼"}</span>
+                      </button>
+                      {expandedNotes.has(c.id)&&(
+                        <div style={{background:"#f8f8ff",borderRadius:8,border:"1px solid #e8e8f2",overflow:"hidden"}}>
+                          <div style={{display:"flex",gap:6,padding:"8px 10px",borderBottom:"1px solid #eeeef5"}}>
+                            <input
+                              value={newNoteText[c.id]||""}
+                              onChange={e=>setNewNoteText(prev=>({...prev,[c.id]:e.target.value}))}
+                              onKeyDown={e=>e.key==="Enter"&&addNote(c.id)}
+                              placeholder="Add a note… press Enter to save"
+                              style={{flex:1,fontSize:12,padding:"6px 10px",borderRadius:6,
+                                border:"1px solid #e0e0ee",background:"#fff",color:"#333",outline:"none"}}
+                            />
+                            <button className="btn" onClick={()=>addNote(c.id)}
+                              style={{background:"#7c6af7",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:13,fontWeight:700,flexShrink:0}}>+</button>
+                          </div>
+                          {getClientNotes(c.id).length===0?(
+                            <div style={{padding:"14px",fontSize:12,color:"#bbb",textAlign:"center"}}>No notes for {selectedYear} yet</div>
+                          ):(
+                            getClientNotes(c.id).map(note=>(
+                              <div key={note.id} style={{display:"flex",gap:8,padding:"8px 10px",borderBottom:"1px solid #eeeef5",alignItems:"flex-start"}}>
+                                <div style={{flex:1}}>
+                                  <div style={{fontSize:10,color:"#bbb",marginBottom:2}}>{note.date}</div>
+                                  <div style={{fontSize:12,color:"#444",lineHeight:1.5}}>{note.text}</div>
+                                </div>
+                                <button className="btn" onClick={()=>deleteNote(c.id,note.id)}
+                                  style={{background:"transparent",color:"#ddd",fontSize:16,padding:"0 4px",flexShrink:0,lineHeight:1}}>×</button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <div style={{display:"flex",gap:7}}>
                       <button className="btn" onClick={()=>openEditClient(c)} style={{flex:1,background:"#eeeef8",color:"#a78bfa",padding:"6px 0",borderRadius:6,fontSize:12,fontWeight:500}}>Edit</button>
                       <button className="btn" onClick={()=>deleteClient(c.id)} style={{flex:1,background:"#fff0f0",color:"#f87171",padding:"6px 0",borderRadius:6,fontSize:12,fontWeight:500}}>Delete</button>
