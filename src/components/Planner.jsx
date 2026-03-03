@@ -1,4 +1,5 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { supabase } from '../supabaseClient';
 
 const COLORS = ["#FFB3B3","#B3E5D1","#B3D4F5","#C8E6C9","#FFF9C4","#E1BEE7","#B2EBF2","#FFF3B0","#D7B8F3","#FFD9B3"];
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -125,15 +126,9 @@ export default function App(){
   const [weekOffset,setWeekOffset]=useState(0);
   const [monthOffset,setMonthOffset]=useState(0);
   const [selectedYear,setSelectedYear]=useState(CURRENT_YEAR);
-  const [clients,setClients]=useState(defaultClients);
-  const [blocks,setBlocks]=useState([
-    {id:1,clientId:1,day:0,start:9, end:11,task:"Homepage mockups",   recur:"weekly"},
-    {id:2,clientId:2,day:1,start:10,end:13,task:"Logo concepts",       recur:"none"},
-    {id:3,clientId:1,day:3,start:14,end:16,task:"Client call",         recur:"weekly"},
-    {id:4,clientId:2,day:2,start:9, end:10,task:"Brand strategy sync", recur:"mwf"},
-    {id:5,clientId:1,day:4,start:11,end:12,task:"Feedback review",     recur:"none"},
-    {id:6,clientId:2,day:0,start:15,end:16,task:"Check-in standup",    recur:"weekdays"},
-  ]);
+  const [clients,setClients]=useState([]);
+  const [blocks,setBlocks]=useState([]);
+  const [dbLoading,setDbLoading]=useState(true);
   const [showClientForm,setShowClientForm]=useState(false);
   const [showBlockForm,setShowBlockForm]=useState(false);
   const [showImport,setShowImport]=useState(false);
@@ -169,8 +164,6 @@ export default function App(){
   const [dragOver,setDragOver]=useState(null);
   const [ghostPos,setGhostPos]=useState({x:0,y:0});
 
-  const nextId=useRef(200);
-
   const getClient=id=>clients.find(c=>c.id===id);
   const filteredClients=useMemo(()=>clients.filter(c=>c.year===selectedYear&&(!categoryFilter||c.category===categoryFilter)),[clients,selectedYear,categoryFilter]);
   const filteredClientIds=useMemo(()=>new Set(filteredClients.map(c=>c.id)),[filteredClients]);
@@ -182,21 +175,91 @@ export default function App(){
   },0),[filteredExpanded,clients]);
   const clientHours=id=>filteredExpanded.filter(b=>b.clientId===id).reduce((s,b)=>s+(b.end-b.start),0);
 
-  function saveClient(){
-    if(!newClient.name.trim()) return;
-    const data={...newClient,rate:Number(newClient.rate)||0,year:Number(newClient.year)||CURRENT_YEAR,estHours:newClient.estHours?Number(newClient.estHours):""};
-    if(editClient) setClients(cs=>cs.map(c=>c.id===editClient?{...c,...data}:c));
-    else setClients(cs=>[...cs,{...data,id:nextId.current++}]);
-    setShowClientForm(false);setEditClient(null);
-    setNewClient({...emptyClient,year:selectedYear});
+  // ── Supabase data loading ──
+  useEffect(()=>{
+    loadData();
+  },[]);
+
+  async function loadData(){
+    setDbLoading(true);
+    const { data:{ user } } = await supabase.auth.getUser();
+    if(!user){ setDbLoading(false); return; }
+
+    const [{ data: cData }, { data: bData }] = await Promise.all([
+      supabase.from('clients').select('*').order('created_at',{ascending:true}),
+      supabase.from('blocks').select('*').order('created_at',{ascending:true}),
+    ]);
+
+    if(cData) setClients(cData.map(r=>({
+      id:r.id, name:r.name, contact:r.contact||'', rate:Number(r.rate)||0,
+      notes:r.notes||'', color:r.color||'#FFB3B3', year:r.year,
+      category:r.category||'Appletree', estHours:r.est_hours||'',
+    })));
+
+    if(bData) setBlocks(bData.map(r=>({
+      id:r.id, clientId:r.client_id, day:r.day,
+      start:r.start_hour, end:r.end_hour, task:r.task, recur:r.recur||'none',
+    })));
+
+    // Load notes
+    const { data: nData } = await supabase.from('client_notes').select('*').order('created_at',{ascending:false});
+    if(nData){
+      const grouped={};
+      nData.forEach(n=>{
+        const cid=n.client_id;
+        const dateStr=new Date(n.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+        if(!grouped[cid]) grouped[cid]=[];
+        grouped[cid].push({id:n.id,text:n.text,date:dateStr,year:n.year,clientId:cid});
+      });
+      setClientNotes(grouped);
+    }
+
+    setDbLoading(false);
   }
-  function deleteClient(id){ setClients(cs=>cs.filter(c=>c.id!==id)); setBlocks(bs=>bs.filter(b=>b.clientId!==id)); }
-  function saveBlock(){
+
+  async function saveClient(){
+    if(!newClient.name.trim()) return;
+    const { data:{ user } } = await supabase.auth.getUser();
+    if(!user) return;
+    const payload={
+      name:newClient.name, contact:newClient.contact, rate:Number(newClient.rate)||0,
+      notes:newClient.notes, color:newClient.color, year:Number(newClient.year)||CURRENT_YEAR,
+      category:newClient.category||'Appletree', est_hours:newClient.estHours?Number(newClient.estHours):null,
+      user_id:user.id,
+    };
+    if(editClient){
+      const {data,error}=await supabase.from('clients').update(payload).eq('id',editClient).select().single();
+      if(!error) setClients(cs=>cs.map(c=>c.id===editClient?{...c,...payload,id:editClient,estHours:payload.est_hours}:c));
+    } else {
+      const {data,error}=await supabase.from('clients').insert([payload]).select().single();
+      if(!error&&data) setClients(cs=>[...cs,{id:data.id,name:data.name,contact:data.contact||'',rate:Number(data.rate)||0,notes:data.notes||'',color:data.color,year:data.year,category:data.category,estHours:data.est_hours||''}]);
+    }
+    setShowClientForm(false);setEditClient(null);setNewClient({...emptyClient,year:selectedYear});
+  }
+
+  async function deleteClient(id){
+    await supabase.from('clients').delete().eq('id',id);
+    setClients(cs=>cs.filter(c=>c.id!==id));
+    setBlocks(bs=>bs.filter(b=>b.clientId!==id));
+  }
+
+  async function saveBlock(){
     if(!newBlock.clientId||!newBlock.task.trim()) return;
-    const b={...newBlock,clientId:Number(newBlock.clientId),start:Number(newBlock.start),end:Number(newBlock.end),day:Number(newBlock.day)};
+    const b={...newBlock,start:Number(newBlock.start),end:Number(newBlock.end),day:Number(newBlock.day)};
     if(b.end<=b.start) return;
-    if(editBlock) setBlocks(bs=>bs.map(bl=>bl.id===editBlock?{...bl,...b}:bl));
-    else setBlocks(bs=>[...bs,{...b,id:nextId.current++}]);
+    const { data:{ user } } = await supabase.auth.getUser();
+    if(!user) return;
+    const payload={
+      client_id:b.clientId, day:b.day, start_hour:b.start, end_hour:b.end,
+      task:b.task, recur:b.recur, user_id:user.id,
+    };
+    if(editBlock){
+      await supabase.from('blocks').update(payload).eq('id',editBlock);
+      setBlocks(bs=>bs.map(bl=>bl.id===editBlock?{...bl,...b,clientId:b.clientId}:bl));
+    } else {
+      const {data,error}=await supabase.from('blocks').insert([payload]).select().single();
+      if(!error&&data) setBlocks(bs=>[...bs,{id:data.id,clientId:data.client_id,day:data.day,start:data.start_hour,end:data.end_hour,task:data.task,recur:data.recur||'none'}]);
+    }
     setShowBlockForm(false);setEditBlock(null);setNewBlock(emptyBlock);
   }
   function openEditBlock(block){
@@ -356,6 +419,34 @@ export default function App(){
       return next;
     });
   }
+  async function addNote(clientId){
+    const text=(newNoteText[clientId]||"").trim();
+    if(!text) return;
+    const { data:{ user } } = await supabase.auth.getUser();
+    if(!user) return;
+    const now=new Date();
+    const dateStr=now.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    const {data,error}=await supabase.from('client_notes').insert([{
+      client_id:clientId, text, year:selectedYear, user_id:user.id
+    }]).select().single();
+    if(!error&&data){
+      const note={id:data.id,text:data.text,date:dateStr,year:selectedYear,clientId};
+      setClientNotes(prev=>({...prev,[clientId]:[note,...(prev[clientId]||[])]}));
+    }
+    setNewNoteText(prev=>({...prev,[clientId]:""}));
+  }
+  async function deleteNote(clientId,noteId){
+    await supabase.from('client_notes').delete().eq('id',noteId);
+    setClientNotes(prev=>({...prev,[clientId]:(prev[clientId]||[]).filter(n=>n.id!==noteId)}));
+  }
+  function getClientNotes(clientId){
+    return (clientNotes[clientId]||[]).filter(n=>n.year===selectedYear);
+  }
+
+  // ── Client Notes ──
+  function toggleNotes(clientId){
+    setExpandedNotes(prev=>{const n=new Set(prev);n.has(clientId)?n.delete(clientId):n.add(clientId);return n;});
+  }
   function addNote(clientId){
     const text=(newNoteText[clientId]||"").trim();
     if(!text) return;
@@ -369,10 +460,9 @@ export default function App(){
     setClientNotes(prev=>({...prev,[clientId]:(prev[clientId]||[]).filter(n=>n.id!==noteId)}));
   }
   function getClientNotes(clientId){
-    return (clientNotes[clientId]||[]).filter(n=>n.year===selectedYear);
+    return(clientNotes[clientId]||[]).filter(n=>n.year===selectedYear);
   }
 
-  // ── Client Notes ──
   // ── Download sample CSV ──
   function downloadSample() {
     const csv = `name,email,rate,notes\nJohn Smith,john@example.com,125,Website project\nSarah Lee,sarah@co.com,175,Marketing campaign\nTech Solutions,admin@tech.com,200,App development`;
@@ -381,6 +471,13 @@ export default function App(){
     a.download = "sample-clients.csv";
     a.click();
   }
+
+  if(dbLoading) return(
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#f7f7fc",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:900,background:"linear-gradient(135deg,#a78bfa,#f472b6)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Chronos</div>
+      <div style={{fontSize:13,color:"#aaa"}}>Loading your data…</div>
+    </div>
+  );
 
   return(
     <div style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",background:"#f7f7fc",height:"100vh",color:"#1a1a2e",display:"flex",flexDirection:"column",overflow:"hidden"}}>
@@ -468,7 +565,7 @@ export default function App(){
         )}
         <div style={{display:"flex",alignItems:"center",gap:4,background:"#f0f0f8",borderRadius:8,padding:"4px 6px",border:"1px solid #e0e0ee"}}>
           <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y-1)} style={{background:"transparent",color:"#777",padding:"2px 7px"}}>‹</button>
-          <span style={{fontSize:13,fontWeight:700,color:"#7c6af7",minWidth:36,textAlign:"center"}}>{selectedYear}</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#c4b5fd",minWidth:36,textAlign:"center"}}>{selectedYear}</span>
           <button className="year-btn btn" onClick={()=>setSelectedYear(y=>y+1)} style={{background:"transparent",color:"#777",padding:"2px 7px"}}>›</button>
         </div>
         <div style={{marginLeft:"auto",display:"flex",gap:10,alignItems:"center"}}>
@@ -621,7 +718,7 @@ export default function App(){
                           <span style={{fontSize:10,color:"#777"}}>{fmt(b.start)}–{fmt(b.end)}</span>
                           {isRecur&&<span className="recur-chip">🔁 {recurShort(b.recur)}</span>}
                         </div>
-                        <button className="btn del-btn" onClick={(e)=>{e.stopPropagation();setBlocks(bs=>bs.filter(bl=>bl.id!==b.id));}}
+                        <button className="btn del-btn" onClick={(e)=>{e.stopPropagation();supabase.from('blocks').delete().eq('id',b.id).then(()=>setBlocks(bs=>bs.filter(bl=>bl.id!==b.id)));}}
                           style={{position:"absolute",top:3,right:3,background:"#ff4444cc",color:"#fff",width:15,height:15,borderRadius:3,fontSize:9,opacity:0,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
                       </div>
                     );
@@ -666,7 +763,7 @@ export default function App(){
                 const active=y===selectedYear;
                 return(
                   <button key={y} className="year-btn btn" onClick={()=>setSelectedYear(y)}
-                    style={{background:active?"#7c6af7":"#ffffff",color:active?"#ffffff":"#888",border:active?"1px solid #7c6af755":"1px solid #1e1e2e",whiteSpace:"nowrap",padding:"5px 14px"}}>
+                    style={{background:active?"linear-gradient(135deg,#7c6af733,#a78bfa22)":"#13131c",color:active?"#c4b5fd":"#444",border:active?"1px solid #7c6af755":"1px solid #1e1e2e",whiteSpace:"nowrap",padding:"5px 14px"}}>
                     {y}{count>0&&<span style={{marginLeft:5,background:active?"#7c6af755":"#1e1e2e",borderRadius:10,padding:"1px 6px",fontSize:10,color:active?"#c4b5fd":"#555"}}>{count}</span>}
                   </button>
                 );
@@ -1195,8 +1292,8 @@ export default function App(){
           <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
             {YEARS.map(y=>(
               <button key={y} className="btn year-btn" onClick={()=>setNewClient({...newClient,year:y})}
-                style={{background:newClient.year===y?"#7c6af7":"#ffffff",
-                  color:newClient.year===y?"#ffffff":"#888",border:newClient.year===y?"1px solid #7c6af766":"1px solid #1e1e2e",fontWeight:newClient.year===y?700:400}}>
+                style={{background:newClient.year===y?"linear-gradient(135deg,#7c6af733,#a78bfa22)":"#1a1a26",
+                  color:newClient.year===y?"#c4b5fd":"#555",border:newClient.year===y?"1px solid #7c6af766":"1px solid #1e1e2e",fontWeight:newClient.year===y?700:400}}>
                 {y}
               </button>
             ))}
